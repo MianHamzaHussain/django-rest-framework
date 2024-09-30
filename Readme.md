@@ -68,10 +68,12 @@ from rest_framework import serializers
 from .models import StudentModel  # Import the model
 
 # Define a serializer for the Student model
-class StudentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = StudentModel  # Specify the model to serialize
-        fields = ['id','name', 'roll', 'city']  # Specify which fields to include
+from rest_framework import serializers
+class StudentSerializer(serializers.Serializer):
+    name=serializers.CharField(max_length=50)
+    roll=serializers.IntegerField()
+    city =serializers.CharField(max_length=50)
+
 
 11. Create views: In rest_app/views.py, define your view function:
 from django.shortcuts import render, HttpResponse
@@ -116,3 +118,32 @@ python manage.py createsuperuser  # Create a superuser for accessing the admin i
 
 16. Run the development server:
 python manage.py runserver  # Start the development server
+
+
+17. Handling Dynamic IDs and Fetching All Records
+# To handle dynamic IDs and fetch all records, update rest_app/views.py as follows:
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+from .models import StudentModel
+from .serializers import StudentSerializer
+
+def student_data(request, pk):
+    student = get_object_or_404(StudentModel, pk=pk)
+    serializer = StudentSerializer(student)
+    return JsonResponse(serializer.data)
+
+def students_data(request):
+    students = StudentModel.objects.all()
+    serializer = StudentSerializer(students, many=True)
+    return JsonResponse(serializer.data, safe=False)
+
+# In rest_app/urls.py, update the URL patterns to handle the dynamic ID and list all student records:
+from django.urls import path
+from .views import student_data, students_data
+
+urlpatterns = [
+    path("student/<int:pk>/", student_data, name="student_detail"),
+    path("students/", students_data, name="student_list"),
+]
+
+
